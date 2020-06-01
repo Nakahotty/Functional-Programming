@@ -13,6 +13,16 @@ t2 = Node 'a' (Node 'c' (Node 'd' Empty Empty)
                                      Empty) 
               (Node 'b' Empty Empty) 
 
+t3 :: BTree Char 
+t3 = Node 'a' (Node 'c' (Node 'd' Empty Empty)
+                                     Empty) 
+              (Node 'b' Empty Empty)
+
+t4 :: BTree Char 
+t4 = Node 'a' (Node 'c' (Node 'd' Empty Empty)
+                                     Empty) 
+              (Node 'b' Empty Empty) 
+
 t5 :: BTree Int                                   --      8
 t5 = Node 8 (Node 3 (Node 1 Empty Empty)          --    /   \
             (Node 4 Empty Empty))                 --   3    10
@@ -31,7 +41,7 @@ t7 = Node 8 (Node 3 (Node 5 Empty Empty)          --  / \
  (Node 10 (Node 5 Empty Empty)                   -- / \ / \
  (Node 14 Empty Empty))                          -- 5 6 9 14
 
--- 1) 
+{-- Функции, които си мислих, че ще ми трябват, но не ми потрябваха
 containsChars :: String -> String -> Bool 
 containsChars [] _        = True 
 containsChars _ []        = False
@@ -45,26 +55,27 @@ isLeaf :: Eq a => a -> BTree a -> Bool
 isLeaf _ Empty                    = False
 isLeaf node (Node el Empty Empty) = node == el
 isLeaf node (Node _ left right)   = isLeaf node left || isLeaf node right
+--}
 
+-- 1) 
 containsWord :: BTree Char -> String -> Bool
 containsWord tree word 
     | length word == 0 = False 
     | otherwise        = elem word (genWords tree) 
 
 -- 2)
-genWords :: BTree Char -> [String]
-genWords tree = [word | word <- wordsInTree tree, subTree <- subTrees tree, isPath subTree word]
-
--- 3)
 wordsInTree :: BTree Char -> [String]
 wordsInTree Empty = []
 wordsInTree (Node ch Empty Empty) = [[ch]]
 wordsInTree tree@(Node ch left right) =  map (ch:) paths ++ paths 
     where paths = wordsInTree left ++ wordsInTree right
 
-subTrees :: BTree a -> [BTree a]
-subTrees    Empty         = []
-subTrees t@(Node _ l r) = t : (subTrees l ++ subTrees r)
+allSubTrees :: BTree a -> [BTree a]
+allSubTrees Empty                     = []  
+allSubTrees tree@(Node n Empty Empty) = tree : []
+allSubTrees tree@(Node n Empty right) = tree : right : allSubTrees right
+allSubTrees tree@(Node n left Empty)  = tree : left : allSubTrees left
+allSubTrees tree@(Node _ left right)  = tree : (allSubTrees left ++ allSubTrees right)
 
 isPath :: BTree Char -> String -> Bool
 isPath Empty ""     = True
@@ -74,15 +85,19 @@ isPath (Node cur left right) (x:xs) = if cur == x
                                         then isPath left xs || isPath right xs
                                         else False
 
+genWords :: BTree Char -> [String]
+genWords tree = nub [word | word <- wordsInTree tree, subTree <- allSubTrees tree, isPath subTree word]
+
+-- 3)
 getDuplicates :: [String] -> [String]
 getDuplicates [] = []
 getDuplicates (c:cs) = if elem c cs then c : getDuplicates cs else getDuplicates cs
 
 allContain :: [BTree Char] -> [String]
-allContain []     = []
+allContain (t1:[])     = []
 allContain (t1:t2:ts) = (nub (duplicatedWords))
     where 
-        duplicatedWords = getDuplicates (wordsFromFirst ++ wordsFromSecond ++ allContain ts) 
+        duplicatedWords = getDuplicates (wordsFromFirst ++ wordsFromSecond ++ allContain (t2:ts)) 
         wordsFromFirst = [word| word <- wordsInTree t1, containsWord t1 word]
         wordsFromSecond = [word| word <- wordsInTree t2, containsWord t2 word]
 
@@ -108,3 +123,6 @@ main = do
     print $ genWords t1 
     print $ genWords t2
     print $ allContain [t1,t2]
+    print $ allContain [t1,t2,t3]
+
+    -- Направи 4та 

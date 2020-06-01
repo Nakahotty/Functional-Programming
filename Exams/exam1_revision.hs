@@ -9,7 +9,7 @@ addNum x = addX
 
 -- Вместо това ползваме ламбда функции
 addNum' x = \ y -> x + y
-add = \ x y -> x + y 
+add = \ x y -> x + y  
 
 inside :: Int -> Int -> (Int -> Bool)
 inside a b = \ x -> x >= a && x <= b 
@@ -314,4 +314,4 @@ main = do
     print $ foldr1' (+) [1,2,3,4]
     print $ foldr1' (||) [False, True, True]
     print $ rev [1,2,3,4,5]
-    
+    print $ map (add 4) [1,2,3,4] 
