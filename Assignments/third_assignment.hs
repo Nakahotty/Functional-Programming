@@ -13,15 +13,15 @@ t2 = Node 'a' (Node 'c' (Node 'd' Empty Empty)
                                      Empty) 
               (Node 'b' Empty Empty) 
 
-t3 :: BTree Char 
-t3 = Node 'a' (Node 'c' (Node 'd' Empty Empty)
-                                     Empty) 
-              (Node 'b' Empty Empty)
+t3 :: NTree
+t3 = NNode 1 [NNode 3 [],
+              NNode 5 [], 
+              NNode 7 [],
+              NNode 9 []]
 
-t4 :: BTree Char 
-t4 = Node 'a' (Node 'c' (Node 'd' Empty Empty)
-                                     Empty) 
-              (Node 'b' Empty Empty) 
+t4 :: NTree 
+t4 = NNode 7 [NNode 9 [NNode 5 [], 
+              NNode 2 []]] 
 
 t5 :: BTree Int                                   --      8
 t5 = Node 8 (Node 3 (Node 1 Empty Empty)          --    /   \
@@ -40,22 +40,6 @@ t7 = Node 8 (Node 3 (Node 5 Empty Empty)          --  / \
  (Node 6 Empty Empty))                            -- 3   10
  (Node 10 (Node 5 Empty Empty)                   -- / \ / \
  (Node 14 Empty Empty))                          -- 5 6 9 14
-
-{-- Функции, които си мислих, че ще ми трябват, но не ми потрябваха
-containsChars :: String -> String -> Bool 
-containsChars [] _        = True 
-containsChars _ []        = False
-containsChars (c:cs) word = elem c word && containsChars cs word
- 
-nodesToWord :: BTree Char -> String
-nodesToWord Empty                  = []
-nodesToWord (Node curr left right) = [curr] ++ nodesToWord left ++ nodesToWord right
-
-isLeaf :: Eq a => a -> BTree a -> Bool
-isLeaf _ Empty                    = False
-isLeaf node (Node el Empty Empty) = node == el
-isLeaf node (Node _ left right)   = isLeaf node left || isLeaf node right
---}
 
 -- 1) 
 containsWord :: BTree Char -> String -> Bool
@@ -98,11 +82,22 @@ allContain (t1:[])     = []
 allContain (t1:t2:ts) = (nub (duplicatedWords))
     where 
         duplicatedWords = getDuplicates (wordsFromFirst ++ wordsFromSecond ++ allContain (t2:ts)) 
-        wordsFromFirst = [word| word <- wordsInTree t1, containsWord t1 word]
-        wordsFromSecond = [word| word <- wordsInTree t2, containsWord t2 word]
+        wordsFromFirst  = [word | word <- wordsInTree t1, containsWord t1 word]
+        wordsFromSecond = [word | word <- wordsInTree t2, containsWord t2 word]
+
+-- 4)
+data NTree = Nil | NNode Int [NTree]
+
+rootValue :: NTree -> Int
+rootValue (NNode x _) = x
+
+isGraceful :: NTree -> Bool 
+isGraceful (NNode x [])     = True 
+isGraceful (NNode x (y:ys)) = if abs (x - fatherOf x) `mod` 2 == 0 then isGraceful y else False
+    where 
+        fatherOf value = 5 -- не успях да разбера как да взимам бащата на всеки елемент
 
 -- 5)
--- Помощна функция за сравняване на корени с даден елемент по подаден предикат
 rootCompare :: (a -> Bool) -> BTree a -> Bool
 rootCompare _ Empty                      = True 
 rootCompare compFunction (Node node l r) = compFunction node && rootCompare compFunction l && rootCompare compFunction r
@@ -120,9 +115,34 @@ main = do
     print $ containsWord t1 "ac"
     print $ containsWord t1 "af"  
     print $ containsWord t1 "be"  
+    --
     print $ genWords t1 
     print $ genWords t2
+    --
     print $ allContain [t1,t2]
-    print $ allContain [t1,t2,t3]
+    --
+    print $ isGraceful t3
+    print $ isGraceful t4
+    -- 
+    print $ isBinarySearchTree t5 
+    print $ isBinarySearchTree t6 
+    print $ isBinarySearchTree t7 
 
-    -- Направи 4та 
+
+
+
+{-- Функции, които си мислих, че ще ползвам, но не ми потрябваха
+containsChars :: String -> String -> Bool 
+containsChars [] _        = True 
+containsChars _ []        = False
+containsChars (c:cs) word = elem c word && containsChars cs word
+ 
+nodesToWord :: BTree Char -> String
+nodesToWord Empty                  = []
+nodesToWord (Node curr left right) = [curr] ++ nodesToWord left ++ nodesToWord right
+
+isLeaf :: Eq a => a -> BTree a -> Bool
+isLeaf _ Empty                    = False
+isLeaf node (Node el Empty Empty) = node == el
+isLeaf node (Node _ left right)   = isLeaf node left || isLeaf node right
+--}
