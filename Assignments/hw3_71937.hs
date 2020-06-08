@@ -57,8 +57,6 @@ wordsInTree tree@(Node ch left right) =  map (ch:) paths ++ paths
 allSubTrees :: BTree a -> [BTree a]
 allSubTrees Empty                     = []  
 allSubTrees tree@(Node n Empty Empty) = tree : []
-allSubTrees tree@(Node n Empty right) = tree : right : allSubTrees right
-allSubTrees tree@(Node n left Empty)  = tree : left : allSubTrees left
 allSubTrees tree@(Node _ left right)  = tree : (allSubTrees left ++ allSubTrees right)
 
 isPath :: BTree Char -> String -> Bool
