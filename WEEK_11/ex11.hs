@@ -76,6 +76,3 @@ findUncles tree node = if null parent then [] else brothers (head parent)
 main :: IO()
 main = do
     print $ maxDepthBlueNode colorTree
-    print $ maxDepthColorNode colorTree Green
-    print $ nTreeSize t4 
-    print $ findUncles t6 5
