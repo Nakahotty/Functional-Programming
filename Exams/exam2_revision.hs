@@ -1,6 +1,8 @@
 import Data.List(delete)
 import Data.List(nub)
 import Data.Maybe(fromJust)
+import Data.Char(ord, isDigit, isUpper, toUpper)
+import Data.List(isPrefixOf, group)
 
 type Node = String
 data BTree a = Empty | Node a (BTree a) (BTree a) deriving Show
@@ -16,8 +18,46 @@ data Color = Red | Green | Blue deriving (Show, Read, Eq)
 --     max, min             :: a -> a -> a 
 --     compare              :: a -> a -> Ordering
 
--- !!! НАПИШИ ОТ ТЕМА 12 ПРИМЕРИТЕ ЗА ДЪРВЕТА
+{--  ЛЕКЦИЯ 9) 
+type Treetd = [(Node,[Node])]
+type Treebu = [(Node,Node)]
+type Path = [Node]
 
+tree1 :: Treetd
+tree1 = [("a",["b","c"]),("b",["d","e"]),
+         ("c",["f","g","h"]),("g",["i","j"]),("h",["k"])]
+
+tree2 :: Treebu
+tree2 = [("b","a"),("c","a"),("d","b"),
+         ("e","b"),("f","c"),("g","c"),
+         ("h","c"),("i","g"),
+         ("j","g"),("k","h")]
+
+assoc :: Eq a => a -> [(a,[b])] -> (a,[b])
+assoc key [] = (key,[])
+assoc key (x:xs) 
+    | fst x == key = x 
+    | otherwise    = assoc key xs 
+
+successors :: Node -> Treetd -> [Node]
+successors node tree = snd (assoc node tree)
+
+is_a_node :: Node -> Treetd -> Bool
+is_a_node node tree = rt node || lf node 
+    where 
+        rt x = elem x (map fst tree)
+        lf x = elem x (concat (map snd tree))
+
+is_a_leaf :: Node -> Treetd -> Bool
+is_a_leaf node tree = is_a_node node tree 
+
+parent :: Node -> Treetd -> Node 
+parent node [] = ""
+parent node tree 
+    | elem node (successors first_node tree) = first_node
+    | otherwise                              = parent node (tail tree)
+        where first_node = fst (head tree)
+--}
 
 -- 6) MaxDepthBlueColor
 colorTree :: BTree Color
@@ -38,6 +78,53 @@ maxDepthBlueColor tree = helper tree 1
         helper Empty _ = 0
         helper (Node Blue left right) curr = maximum [curr, helper left (curr+1), helper right (curr+1)]
         helper (Node _ left right)    curr = max (helper left (curr+1)) (helper right (curr+1))
+
+-- 7) 
+type Name = String -- име
+type Capital = Name -- столица
+type AvgYearlyTemperature = Double -- средногодишна температура
+type Elevation = Int -- надморска височина
+data City = City Name Elevation AvgYearlyTemperature -- град
+                      deriving (Read, Show)
+data Country = Country Name Capital [City] -- държава
+                      deriving (Read, Show)
+
+bulgaria, greece, france :: Country 
+varna, athens, toulouse :: City   
+varna    = City "Varna" 133 19.1 
+athens   = City "Athens" 175 22.5
+toulouse = City "Toulouse" 55 21.3
+bulgaria = Country "Bulgaria" "Sofia" [varna] 
+greece   = Country "Greece" "Athens" [athens]
+france   = Country "France" "Paris" [toulouse]
+
+getAvgTemp :: City -> AvgYearlyTemperature
+getAvgTemp (City name elev temp) = temp 
+
+-- compareTemps :: [Country] -> AvgYearlyTemperature
+-- compareTemps countries = maximum [getAvgTemp cityName | cityName <- capitals]
+--    where capitals = [capital | Country _ capital _ <- countries] 
+
+-- coldestCapital :: [Country] -> Name 
+-- coldestCapital ((_,capital,_):rest) = 
+
+-- 1)
+funcHelp :: Int -> (Int -> Int) -> [Int] -> Int
+funcHelp x f lst = helper x f 1 lst 
+    where 
+        helper n g count (x:xs) = count * (g (x*n)) + helper n g (count+1) xs 
+
+func :: (Int -> Int) -> [Int] -> (Int -> Int)
+func f lst = (\ x -> funcHelp x f lst)
+
+-- 2) 
+func2Helper :: Int -> (Int -> Int) -> [Int] -> Int 
+func2Helper x f lst = helper x f 1 lst 
+    where 
+        helper n g count (x:xs) = n * (g (x^count)) + helper n g (count + 1) xs 
+
+func2 :: (Int -> Int) -> [Int] -> (Int -> Int)
+func2 f lst = (\ x -> func2Helper x f lst)
 
 {--  ТЕМА 9) Упражнение
 data Temp = Cold | Hot deriving Show
@@ -213,7 +300,7 @@ findUncles tree node = if null parent then [] else brothers (head parent)
         brothers v = concat [delete v vs | (_, vs) <- tree, elem v vs] 
 --}
 
-{-- ТЕМА 12) Упражнение --}
+{-- ТЕМА 12) Упражнение
 graph1 :: [(Int, Int)]
 graph1 = [(1, 2), (1, 3), (2, 3), (2, 4)]
 
@@ -249,11 +336,94 @@ transpose :: [[a]] -> [[a]]
 transpose []     = []
 transpose ([]:_) = []
 transpose xss = map head xss : transpose (map tail xss)
+--}
+
+{-- ТЕМА 14) Упражнение 
+digits :: String -> String 
+digits str = [ch | ch <- str, isDigit ch]
+
+digitsSum :: String -> Int 
+digitsSum "" = 0 
+digitsSum (c:cs) 
+    | isDigit c = ord c - ord '0' + digitsSum cs        -- ord c - ord '0' - връща стойноста, не аски код
+    | otherwise = digitsSum cs 
+
+capitalize :: String -> String
+capitalize cs = map toUpper cs 
+
+isVowel :: Char -> Bool
+isVowel c = elem c "aeiouy"
+
+countVowels :: String -> Int 
+countVowels word = length [c | c <- word, isVowel c]
+
+isInfixOf :: String -> String -> Bool
+isInfixOf [] _     = True 
+isInfixOf (_:_) [] = False
+isInfixOf xs ys    = isPrefixOf xs ys || isInfixOf xs (tail ys)   -- isPrefix има същото действие само върху списъци
+
+firstWord :: String -> String 
+firstWord ""         = ""
+firstWord (' ':cs)   = firstWord cs -- прескачаме интервали
+firstWord (c:' ':cs) = [c]          -- края на първата дума 
+firstWord (c:c':cs)  = c : firstWord (c':cs)
+firstWord cs         = cs           -- ако е една дума
+--}
+
+{-- АЛГЕБРИЧЕН ТИП --}
+type Point = (Double, Double)
+
+closestPoint :: [Point] -> (Point -> Point)
+closestPoint ps (px, py) = foldr1 closer ps 
+    where 
+        closer p1 p2 = if (distanceToP p1) < (distanceToP p2) then p1 else p2  
+        distanceToP (x,y) = sqrt ((px - x) ^ 2 + (py - y) ^ 2) 
+
+type Product = (String, Int, Float)
+type Shop = [Product]
+
+p1, p2, p3, p4 :: Product
+p1 = ("milk", 5, 1.20)
+p2 = ("cheese", 20, 1.80)
+p3 = ("bread", 10, 0.50)
+p4 = ("chocolate", 3, 2.00)
+
+shop :: Shop 
+shop = [p1,p2,p3,p4]
+
+getPrice :: Product -> Float 
+getPrice (_, _, price) = price 
+
+getTotal :: Shop -> Float 
+getTotal [] = 0
+getTotal ((_, quantity, price) : xs) = fromIntegral quantity * price + getTotal xs 
+
+buy :: String -> Int -> Shop -> Shop 
+buy _ _ [] = error "No such product"
+buy name' quantity' (x@(name, quantity, price):xs) 
+    | name' == name && quantity' < quantity  = (name, quantity - quantity', price) : xs 
+    | name' == name && quantity' == quantity = xs 
+    | name' == name && quantity' > quantity  = x : xs 
+    | otherwise                              = x : buy name' quantity' xs  
+
+getNeeded :: Int -> Shop -> [Product]
+getNeeded needed xs = [x | x@(_,quantity, _) <- xs, quantity <= needed]
+
+getAverage :: Shop -> Float
+getAverage xs = sum prices / fromIntegral (length prices) 
+    where prices = [price | (_, _, price) <- xs]
+
+closestToAverage :: Shop -> String
+closestToAverage xs = name
+    where 
+        (name, _, _) = foldl1 compareProducts xs 
+        compareProducts p1@(_, _, price1) p2@(_, _, price2) = if abs (price1 - average) < abs (price2 - average) then p1 else p2
+        average = getAverage xs
 
 main :: IO()
 main = do 
-    print $ nodes graph1
-    print $ lookup' 2 assocList
-    print $ replace [1,2] assocList
-    print $ isGraph [(1, 1), (2, 4), (4, 16)] (\ x -> x * x)
-    print $ transpose mat 
+    print $ getTotal shop 
+    print $ buy "milk" 3 shop 
+    print $ getNeeded 20 shop 
+    print $ getAverage shop
+    print $ closestToAverage shop 
